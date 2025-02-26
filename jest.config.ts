@@ -1,0 +1,20 @@
+export default {
+  transform: {
+    "^.+\\.(t|j)sx?$": [
+      "@swc/jest",
+      {
+        jsc: {
+          parser: {
+            syntax: "typescript",
+            decorators: true,
+          },
+          transform: {
+            legacyDecorator: true,
+            decoratorMetadata: true,
+          },
+        },
+      },
+    ],
+  },
+  setupFilesAfterEnv: ["<rootDir>/e2e/mock-db-config.ts"],
+};

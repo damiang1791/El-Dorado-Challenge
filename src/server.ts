@@ -1,26 +1,48 @@
-import Hapi from '@hapi/hapi'
-import { defineRoutes } from './routes'
+import Hapi from "@hapi/hapi";
+import { defineRoutes } from "./routes";
+import config from "./shared/config/config";
+import { connectToDatabase } from "./modules/db/infrastructure/db-connection";
+import Inert from "@hapi/inert";
+import Vision from "@hapi/vision";
+import HapiSwagger from "hapi-swagger";
+import { swaggerOptions } from "./shared/swagger/swagger.config";
+import { handlerError } from "./shared/errors/handler.error";
 
-const getServer = () => {
-    const server = Hapi.server({
-        host: 'localhost',
-        port: 3000,
-    })
+const { app } = config;
 
-    defineRoutes(server)
+const getServer = async () => {
+  const server = Hapi.server({
+    host: app.host,
+    port: app.port,
+  });
 
-    return server
-}
+  await connectToDatabase();
+
+  await server.register([
+    Inert,
+    Vision,
+    {
+      plugin: HapiSwagger,
+      options: swaggerOptions,
+    },
+  ]);
+
+  server.ext("onPreResponse", handlerError);
+
+  defineRoutes(server);
+
+  return server;
+};
 
 export const initializeServer = async () => {
-    const server = getServer()
-    await server.initialize()
-    return server
-}
+  const server = await getServer();
+  await server.initialize();
+  return server;
+};
 
 export const startServer = async () => {
-    const server = getServer()
-    await server.start()
-    console.log(`Server running on ${server.info.uri}`)
-    return server
+  const server = await getServer();
+  await server.start();
+  console.log(`Server running on ${server.info.uri}`);
+  return server;
 };
